@@ -22,22 +22,12 @@ import { useNavigate } from "react-router-dom"
 export function CardWithForm() {
   const [name, setName] = useState<string>("");
   const [template, setTemplate] = useState<string>("");
-  const [socket, setSocket] = useState<null | WebSocket>(null);
   const navigate = useNavigate();
 
   function handleSubmit() {
     // if both name and template are there then continue 
     // check for the name in db, if its in db then we cant allow it else we can proceed
-    const socket = new WebSocket('ws://localhost:3000/connect');
-    socket.onopen = (event) => {
-      console.log('connection succesful');
-    }
-
-    socket.onmessage = (event)=>{
-      console.log('Message from the server:' + event.data);
-    }
-
-    navigate('/code');
+    navigate('/code?boxId=buttercup');
   }
 
   return (
