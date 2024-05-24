@@ -1,5 +1,7 @@
 import Folder from "./folder";
 import File from "./file";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 export type resultType = {
   name?: string,
@@ -10,14 +12,10 @@ export type resultType = {
 
 type props = {
   folderStructureData: resultType | null,
-  socket: WebSocket | null,
 }
 
-function Explorer({folderStructureData, socket}: props) {
-
-  function handleFileClick(path: string) {
-    socket?.send(JSON.stringify({event: 'file-click', data: path}));
-  }
+function Explorer({folderStructureData}: props) {
+  const socket = useSelector((state: RootState) => state.socket.value);
 
   if(!folderStructureData || !socket) {
     return (
@@ -29,7 +27,7 @@ function Explorer({folderStructureData, socket}: props) {
     <div className="h-[600px] w-[260px] border border-black border-dashed cursor-pointer">
       {
           folderStructureData?.items?.map((item, id) => {
-          return item.isFolder ? <Folder key={id} item={item} size={0} handleFileClick={handleFileClick}/> : <File key={id} item={item} size={0} handleClick={handleFileClick}/>;
+          return item.isFolder ? <Folder key={id} item={item} size={0}/> : <File key={id} item={item} size={0}/>;
         })
       }
     </div>

@@ -1,25 +1,63 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CodeEditor from "@uiw/react-textarea-code-editor";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
-type props = {
-  socket: WebSocket | null,
+
+function debounce(callback:any, timer: number) {
+  let timeout: any = null;
+
+  return (...args: any) => {
+    clearTimeout(timeout);
+
+    timeout = setTimeout(() => {
+      callback(...args);
+    }, timer);
+  }
 }
 
-function Editor({socket}: props) {
+function Editor() {
+  const render = useSelector((state: RootState) => state.editor.value);
+  const socket = useSelector((state: RootState) => state.socket.value);
   const [code, setCode] = useState(
     `function add(a, b) {\n  return a + b;\n}`
   );
   const [fileName, setFileName] = useState<string>('filename')
+  const [filePath, setFilePath] = useState<string>('filePath');
 
-  if(socket) {
-    socket.onmessage = (event)=>{
-      const message = JSON.parse(event.data);
-      if(message.event === 'file') {
-        setCode(message.data);
-        setFileName(message.name);
+  console.log('rerendered', render);
+
+  useEffect(()=>{
+    if(socket) {
+      socket.onmessage = (event)=>{
+        const message = JSON.parse(event.data);
+        console.log(message);
+        if(message.event === 'file') {
+          setCode(message.data);
+          setFileName(message.name);
+          setFilePath(message.path);
+        }
       }
     }
+
+    return() => {
+      if(socket) {
+        socket.onmessage = null;
+      }
+    }
+  }, [socket]);
+  
+  function handleChange(content: string) {
+    setCode(content);
+    if (socket) {
+      socket.send(
+        JSON.stringify({ event: "coding", data: content, filePath: filePath })
+      );
+      console.log('sent changed data');
+    }
   }
+
+  const debouncedHandleChange = debounce(handleChange, 2000);
 
   return (
     <>
@@ -30,7 +68,7 @@ function Editor({socket}: props) {
             value={code}
             language="js"
             placeholder="Please enter your code."
-            onChange={(evn) => setCode(evn.target.value)}
+            onChange={(e) => debouncedHandleChange(e.target.value)}
             padding={15}
             className="text-[16px] bg-transparent select-text overflow-y-scroll"
             style={{
