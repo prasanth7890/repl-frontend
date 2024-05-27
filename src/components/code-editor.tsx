@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CodeEditor from "@uiw/react-textarea-code-editor";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store";
-
+import { WebSocketHandler } from "@/lib/WebSocketHandler";
 
 function debounce(callback:any, timer: number) {
   let timeout: any = null;
@@ -17,35 +15,22 @@ function debounce(callback:any, timer: number) {
 }
 
 function Editor() {
-  const render = useSelector((state: RootState) => state.editor.value);
-  const socket = useSelector((state: RootState) => state.socket.value);
+  const wsh = WebSocketHandler.getInstance('buttercup');
+  const socket = wsh.getSocket();
+
   const [code, setCode] = useState(
     `function add(a, b) {\n  return a + b;\n}`
   );
-  const [fileName, setFileName] = useState<string>('filename')
+  const [fileName, setFileName] = useState<string>('filename');
   const [filePath, setFilePath] = useState<string>('filePath');
 
-  console.log('rerendered', render);
+  const handleFileClick = (...args: any) => {
+    setCode(args[0]);
+    setFileName(args[1])
+    setFilePath(args[2]);
+  }
 
-  useEffect(()=>{
-    if(socket) {
-      socket.onmessage = (event)=>{
-        const message = JSON.parse(event.data);
-        console.log(message);
-        if(message.event === 'file') {
-          setCode(message.data);
-          setFileName(message.name);
-          setFilePath(message.path);
-        }
-      }
-    }
-
-    return() => {
-      if(socket) {
-        socket.onmessage = null;
-      }
-    }
-  }, [socket]);
+  wsh.whenFileClick = handleFileClick;
   
   function handleChange(content: string) {
     setCode(content);

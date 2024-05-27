@@ -1,7 +1,5 @@
 import Folder from "./folder";
 import File from "./file";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store";
 
 export type resultType = {
   name?: string,
@@ -15,9 +13,8 @@ type props = {
 }
 
 function Explorer({folderStructureData}: props) {
-  const socket = useSelector((state: RootState) => state.socket.value);
 
-  if(!folderStructureData || !socket) {
+  if(!folderStructureData) {
     return (
       <div>Loading...</div>
     )

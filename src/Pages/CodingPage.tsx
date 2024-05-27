@@ -1,45 +1,42 @@
 import Explorer from "@/components/explorer";
 import Editor from "@/components/code-editor";
 import Output from "@/components/output";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams} from "react-router-dom";
 import { resultType } from "@/components/explorer";
 import TerminalComponent from "@/components/terminal";
-import {useDispatch, useSelector } from "react-redux";
-import { setWebSocket } from "@/features/socketSlice";
-import { RootState } from "@/store";
-
+// import {useDispatch, useSelector } from "react-redux";
+// import { setWebSocket } from "@/features/socketSlice";
+// import { RootState } from "@/store";
+import { WebSocketHandler } from "@/lib/WebSocketHandler";
 
 export default function CodingPage() {
   const [params, setParams] = useSearchParams();
   const [loading, setLoading] = useState<boolean>(true); 
   const boxId = params.get('boxId') || ""; 
-  const socket = useSelector((state: RootState) => state.socket.value);
-  const dispatch = useDispatch();
+  // const socket = useSelector((state: RootState) => state.socket.value);
+  // const dispatch = useDispatch();
   const [folderStructureData, setFolderStructureData] = useState<resultType | null>(null);
-
+  let wsh: WebSocketHandler | null;
+  
   useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:3000/connect?boxId=${boxId}`);
+    wsh = WebSocketHandler.getInstance(boxId);
+    wsh.addEventListeners();
 
-    dispatch(setWebSocket(ws));
+    const handleLoading = (...args: any) => {
+      setLoading(false);
+      setFolderStructureData(args[0]);
+    }
+
+    if(wsh) {
+      wsh.whenLoaded = handleLoading;
+    }
 
     return () => {
-      socket?.close();
+      wsh?.closeSocket();
+      wsh?.clearInstance();
     };
   }, []);
-  
-  useMemo(()=>{
-    if(socket) {
-      socket.onmessage = (event)=>{
-        const message = JSON.parse(event.data);
-        if(message.event === 'loaded') {
-          setFolderStructureData(message.data);
-          setLoading(false);
-        }
-      }
-    }
-  }, [socket]);
-
 
   if(loading) {
     return (

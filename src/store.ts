@@ -1,11 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
 import socketReducer from './features/socketSlice'
-import renderEditorReducer from './features/renderEditorSlice'
 
 export const store = configureStore({
   reducer: {
     socket: socketReducer,
-    editor: renderEditorReducer
   },
 })
 

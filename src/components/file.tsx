@@ -1,7 +1,5 @@
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "@/store";
-import { setRenderEditor } from "@/features/renderEditorSlice";
-
+import { WebSocketHandler } from "@/lib/WebSocketHandler";
+import { useSearchParams} from "react-router-dom";
 
 type props = {
     item: any,
@@ -9,12 +7,14 @@ type props = {
 }
 
 function File({item, size}: props) {
-  const socket = useSelector((state: RootState) => state.socket.value);
-  const dispatch = useDispatch();
+  const [params, setParams] = useSearchParams();
+  const boxId = params.get('boxId') || ""; 
+
+  const wsh = WebSocketHandler.getInstance(boxId);
+  const socket = wsh.getSocket();
 
   function handleFileClick(path: string) {
     socket?.send(JSON.stringify({event: 'file-click', data: path}));
-    dispatch(setRenderEditor(true));
   }
   
   return (

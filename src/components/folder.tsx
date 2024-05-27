@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import File from "./file";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "@/store";
+import { WebSocketHandler } from "@/lib/WebSocketHandler";
+import { useSearchParams} from "react-router-dom";
 
 type props = {
   item: any,
@@ -10,35 +10,33 @@ type props = {
 
 
 function Folder({ item, size }: props) {
+  const [params, setParams] = useSearchParams();
+  const boxId = params.get('boxId') || ""; 
+
   const subFiles = useRef([]);
-  const socket = useSelector((state: RootState) => state.socket.value);
+  const wsh = WebSocketHandler.getInstance(boxId);
+  const socket = wsh.getSocket();
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+
+  const folderClickCallback = (path: string, data: []) => {
+    if(path === item.path) {
+      subFiles.current = data;
+      setIsExpanded(true);
+    }
+  }
+
+  wsh.whenFolderClick = folderClickCallback;
   
-  function handleFolderClick(path: string): Promise<void> {
-    return new Promise((resolve, reject)=> {
-      if(socket) {
-        socket.onmessage = (event) => {
-          const message = JSON.parse(event.data);
-          if (message.event === 'folder' && message.path === item.path) {
-            subFiles.current = message.data;
-            resolve();
-          }
-        }
-  
-        socket?.send(JSON.stringify({event: 'folder-click', dirPath: path}));
-      }
-    })
+  function handleFolderClick(path: string) {
+    socket?.send(JSON.stringify({event: 'folder-click', dirPath: path}));
   }
   
-  async function onClick() {
+  function onClick() {
     if(isExpanded) {
       setIsExpanded(false); 
     }
     else {
-      await handleFolderClick(item.path);
-      if(subFiles.current.length > 0) {
-        setIsExpanded(true);
-      }
+      handleFolderClick(item.path);
     }
   }
 
